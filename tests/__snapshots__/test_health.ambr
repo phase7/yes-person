@@ -1,0 +1,6 @@
+# serializer version: 1
+# name: test_health_returns_ok
+  dict({
+    'status': 'ok',
+  })
+# ---
