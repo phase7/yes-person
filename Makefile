@@ -1,4 +1,4 @@
-.PHONY: dev test test-update lint format install
+.PHONY: dev test test-update lint format install docker-build docker-up
 
 dev:
 	uv run fastapi dev app/main.py
@@ -17,3 +17,9 @@ format:
 
 install:
 	uv sync
+
+docker-build:
+	docker build -t yes-person .
+
+docker-up:
+	docker compose up
