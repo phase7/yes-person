@@ -1,0 +1,41 @@
+# serializer version: 1
+# name: test_unmatched_delete_returns_200_with_stub_payload
+  dict({
+    'error': 'stub_not_found',
+    'message': 'DELETE /api/users/42 is not yet implemented in yes-person',
+    'method': 'DELETE',
+    'path': '/api/users/42',
+  })
+# ---
+# name: test_unmatched_get_returns_200_with_stub_payload
+  dict({
+    'error': 'stub_not_found',
+    'message': 'GET /api/does-not-exist is not yet implemented in yes-person',
+    'method': 'GET',
+    'path': '/api/does-not-exist',
+  })
+# ---
+# name: test_unmatched_patch_returns_200_with_stub_payload
+  dict({
+    'error': 'stub_not_found',
+    'message': 'PATCH /api/users/42/status is not yet implemented in yes-person',
+    'method': 'PATCH',
+    'path': '/api/users/42/status',
+  })
+# ---
+# name: test_unmatched_post_returns_200_with_stub_payload
+  dict({
+    'error': 'stub_not_found',
+    'message': 'POST /api/payments/submit is not yet implemented in yes-person',
+    'method': 'POST',
+    'path': '/api/payments/submit',
+  })
+# ---
+# name: test_unmatched_put_returns_200_with_stub_payload
+  dict({
+    'error': 'stub_not_found',
+    'message': 'PUT /api/users/42 is not yet implemented in yes-person',
+    'method': 'PUT',
+    'path': '/api/users/42',
+  })
+# ---
