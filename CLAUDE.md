@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **yes-person** is a mock API server built with FastAPI. Given an OpenAPI (or similar) spec, it replicates the described API's behavior with placeholder/stub responses. The goal is to provide a working API surface for integration testing against live systems before real backends are available.
 
+Unmatched routes return `200 OK` with a `stub_not_found` JSON payload (path + method) instead of a 404, keeping the mock cooperative.
+
 ## Tech Stack
 
 - **Python 3.13+** with **FastAPI**, managed by **uv**
@@ -13,24 +15,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-All workflow commands are in the `Makefile`. Run `make <target>`:
-
-| Target | Purpose |
-|--------|---------|
-| `make install` | Install/sync dependencies |
-| `make dev` | Start dev server with reload |
-| `make test` | Run all tests |
-| `make test-update` | Update syrupy snapshots |
-| `make lint` | Lint with ruff |
-| `make format` | Auto-format with ruff |
-| `make docker-build` | Build the production Docker image |
-| `make docker-up` | Run the app via Docker Compose (dev mode with hot reload) |
-
-To run a single test: `uv run pytest tests/test_foo.py::test_name -v`
+All workflow commands are in the `Makefile` — run `make <target>` to see available targets. To run a single test: `uv run pytest tests/test_foo.py::test_name -v`
 
 ## Architecture
 
-- **`app/main.py`** — FastAPI app entry point, mounts routers
+- **`app/main.py`** — FastAPI app entry point; mounts routers, catch-all fallback route registered last
 - **`app/routers/`** — Route modules generated from OpenAPI spec sections
 - **`app/models/`** — Pydantic models matching the OpenAPI schemas
 - **`app/stubs/`** — Placeholder response data (JSON fixtures or factory functions)
@@ -39,48 +28,24 @@ To run a single test: `uv run pytest tests/test_foo.py::test_name -v`
 
 ## Docker
 
-The app is containerized with a multi-stage Dockerfile:
-- **Builder stage** — installs deps via `uv sync --no-dev --frozen` into `.venv`
-- **Runtime stage** — lean image, non-root `appuser`, venv on `PATH`, port 8000
-
-`docker-compose.yml` mounts `./app` as a volume and runs uvicorn with `--reload` for local dev. Production image uses the `CMD` from the Dockerfile (no reload).
+Multi-stage Dockerfile: builder installs deps via `uv sync --no-dev --frozen`, runtime uses a lean non-root image on port 8000. `docker-compose.yml` mounts `./app` with `--reload` for local dev.
 
 ## Testing Strategy
 
-Tests use **pytest** with **syrupy** for snapshot testing and **starlette.testclient.TestClient** for HTTP requests.
-
-### How it works
-
-1. `tests/conftest.py` provides a shared `client` fixture wrapping the FastAPI app
-2. Tests make requests via `client` and assert `response.json() == snapshot`
-3. Syrupy captures response bodies as snapshots in `tests/__snapshots__/`
-
-### Writing a new test
+Tests use **pytest** + **syrupy** (snapshot testing) + `starlette.testclient.TestClient`.
 
 ```python
 def test_my_endpoint(client, snapshot):
     response = client.get("/my-endpoint")
-
     assert response.status_code == 200
     assert response.json() == snapshot
 ```
 
-Then run `make test` — it will fail with a missing snapshot. Run `make test-update` to generate the snapshot, then `make test` again to confirm it passes.
-
-### When snapshots break
-
-If a test fails because the response changed intentionally, run `make test-update` to accept the new snapshot. Review the diff in `tests/__snapshots__/` before committing.
+New tests fail until you run `make test-update` to generate the snapshot. If a snapshot breaks intentionally, re-run `make test-update` and review the diff in `tests/__snapshots__/` before committing.
 
 ## Commit Style
 
-Commits must be modular and grouped by concern — one logical unit per commit. Never bundle unrelated changes. Follow conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
-
-Group by layer:
-1. Environment/tooling (`.python-version`, `mise.toml`, `Makefile`)
-2. Dependencies (`pyproject.toml`, `uv.lock`)
-3. App code (`app/`)
-4. Tests (`tests/`)
-5. Docs/config (`CLAUDE.md`, `openspec/`, `.claude/`)
+Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`), one logical unit per commit, grouped by layer: tooling → dependencies → app code → tests → docs/config.
 
 ## Key Design Decisions
 
@@ -88,3 +53,4 @@ Group by layer:
 - All responses are placeholder/stub data, not live — the purpose is integration scaffolding
 - When adding a new spec, generate corresponding routers, models, and stub responses
 - Use `uv` as the package manager (not pip or poetry)
+- The catch-all route must always be registered last in `main.py` (after all `include_router` calls)
