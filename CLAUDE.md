@@ -23,6 +23,8 @@ All workflow commands are in the `Makefile`. Run `make <target>`:
 | `make test-update` | Update syrupy snapshots |
 | `make lint` | Lint with ruff |
 | `make format` | Auto-format with ruff |
+| `make docker-build` | Build the production Docker image |
+| `make docker-up` | Run the app via Docker Compose (dev mode with hot reload) |
 
 To run a single test: `uv run pytest tests/test_foo.py::test_name -v`
 
@@ -34,6 +36,14 @@ To run a single test: `uv run pytest tests/test_foo.py::test_name -v`
 - **`app/stubs/`** — Placeholder response data (JSON fixtures or factory functions)
 - **`specs/`** — Source OpenAPI/spec files that define the target API surface
 - **`tests/`** — Pytest tests validating routes match the spec contract
+
+## Docker
+
+The app is containerized with a multi-stage Dockerfile:
+- **Builder stage** — installs deps via `uv sync --no-dev --frozen` into `.venv`
+- **Runtime stage** — lean image, non-root `appuser`, venv on `PATH`, port 8000
+
+`docker-compose.yml` mounts `./app` as a volume and runs uvicorn with `--reload` for local dev. Production image uses the `CMD` from the Dockerfile (no reload).
 
 ## Testing Strategy
 
@@ -60,6 +70,17 @@ Then run `make test` — it will fail with a missing snapshot. Run `make test-up
 ### When snapshots break
 
 If a test fails because the response changed intentionally, run `make test-update` to accept the new snapshot. Review the diff in `tests/__snapshots__/` before committing.
+
+## Commit Style
+
+Commits must be modular and grouped by concern — one logical unit per commit. Never bundle unrelated changes. Follow conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+
+Group by layer:
+1. Environment/tooling (`.python-version`, `mise.toml`, `Makefile`)
+2. Dependencies (`pyproject.toml`, `uv.lock`)
+3. App code (`app/`)
+4. Tests (`tests/`)
+5. Docs/config (`CLAUDE.md`, `openspec/`, `.claude/`)
 
 ## Key Design Decisions
 
