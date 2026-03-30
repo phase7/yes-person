@@ -1,0 +1,552 @@
+openapi: 3.0.0
+info:
+  title: dcapi-waybill-document-public
+  version: 3.0.0
+servers:
+- url: https://dcapi.apis.post.ch/logistics/waybill/document/v3
+security:
+- ClientCredentials:
+  - DCAPI_WAYBILL_DOCUMENT
+paths:
+  /cost-centers:
+    get:
+      tags:
+      - Cost Centers
+      summary: Get cost centers of your mandate.
+      operationId: CostCentersV3_GetCostCenters
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                CostCenters:
+                - Value: "0981000000935"
+                  Description: KST1
+                - Value: "0981000000936"
+                  Description: KST2
+    head:
+      tags:
+      - Cost Centers
+      summary: Availability check.
+      operationId: CostCentersV3_HeadForGetCostCenters
+      responses:
+        "200":
+          description: OK
+  /delivery/lead-times:
+    get:
+      tags:
+      - Delivery Lead Times
+      summary: Get delivery lead times in amount of days by country and post-pac-product.
+      operationId: DeliveryLeadTimesV3_GetDeliveryLeadTime
+      parameters:
+      - name: receiverCountryIso
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: product
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - POST_PAC_INT_PRIORITY
+          - DOCUMENTS_URGENT
+          - GOODS_URGENT
+          - SMALL_GOODS_URGENT
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                ReceiverCountryIso: DE
+                Product: DOCUMENTS_URGENT
+                LeadTime: E + 2-3
+    head:
+      tags:
+      - Delivery Lead Times
+      summary: Availability check.
+      operationId: DeliveryLeadTimesV3_HeadForGetDeliveryLeadTime
+      responses:
+        "200":
+          description: OK
+  /waybill/documents:
+    post:
+      tags:
+      - Waybill
+      summary: Upload a document for a new waybill with URGENT product.
+      operationId: WaybillV3_DocumentUpload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - document
+              - documentType
+              type: object
+              properties:
+                document:
+                  type: string
+                  format: binary
+                documentType:
+                  type: string
+                  enum:
+                  - EXTERNAL_COMMERCIAL_INVOICE
+                  - EXTERNAL_PROFORMA_INVOICE
+                  - CERTIFICATE_OF_ORIGIN
+                  - OTHER
+                documentDescription:
+                  type: string
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                DocumentId: c0fb150f-6bf3-44df-984a-3a0611ae5e4a
+    head:
+      tags:
+      - Waybill
+      summary: Availability check.
+      operationId: WaybillV3_HeadForDocumentUpload
+      responses:
+        "200":
+          description: OK
+  /waybill/signatures:
+    post:
+      tags:
+      - Waybill
+      summary: Upload a signature for a new waybill.
+      operationId: WaybillV3_SignaturePictureUpload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - image
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                SignatureId: c0fb150f-6bf3-44df-984a-3a0611ae5e4a
+    head:
+      tags:
+      - Waybill
+      summary: Availability check.
+      operationId: WaybillV3_HeadForSignaturePictureUpload
+      responses:
+        "200":
+          description: OK
+  /waybills:
+    post:
+      tags:
+      - Waybills
+      summary: Create a new waybill.
+      operationId: WaybillsV3_CreateWaybill
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.Waybill"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                TrackingNumber: TT790123783CH
+    head:
+      tags:
+      - Waybills
+      summary: Availability check.
+      operationId: WaybillsV3_HeadForCreateWaybill
+      responses:
+        "200":
+          description: OK
+  /waybills/{trackingNumber}:
+    delete:
+      tags:
+      - Waybills
+      summary: Delete an existing waybill by trackingnumber.
+      operationId: WaybillsV3_DeleteWaybill
+      parameters:
+      - name: trackingNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content (successful deletion)
+    head:
+      tags:
+      - Waybills
+      summary: Availability check.
+      operationId: WaybillsV3_HeadForDeleteWaybill
+      parameters:
+      - name: trackingNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+  /waybills/{trackingNumber}/{fileName}:
+    get:
+      tags:
+      - Waybills
+      summary: (Re-) Print an existing waybill by trackingnumber.
+      operationId: WaybillsV3_ReprintWaybill
+      parameters:
+      - name: trackingNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: fileName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/pdf:
+              schema:
+                type: object
+    head:
+      tags:
+      - Waybills
+      summary: Availability check.
+      operationId: WaybillsV3_HeadForReprintWaybill
+      parameters:
+      - name: trackingNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: fileName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    ch.post.logistics.waybill.document.models.v3.Waybill:
+      required:
+      - Addresses
+      - Articles
+      - CurrencyISOCode
+      - DispatchDate
+      - FrankingLicence
+      - GrossWeight
+      - NatureOfContent
+      - OriginDeclarationLanguage
+      - ParcelsAmount
+      - Product
+      - RecipientOrSenderAddressIsIdenticalToInvoiceAddress
+      type: object
+      properties:
+        DispatchDate:
+          type: string
+          format: date-time
+        FrankingLicence:
+          type: integer
+          format: int32
+        CostCenter:
+          type: string
+        Addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.Address"
+        RecipientOrSenderAddressIsIdenticalToInvoiceAddress:
+          type: boolean
+        Product:
+          type: string
+          enum:
+          - POST_PAC_INT_PRIORITY
+          - DOCUMENTS_URGENT
+          - GOODS_URGENT
+          - SMALL_GOODS_URGENT
+        AuxiliaryServices:
+          type: array
+          items:
+            type: string
+        IsPalletised:
+          type: boolean
+        ParcelsAmount:
+          type: integer
+          format: int32
+        GrossWeight:
+          type: number
+          format: double
+        NatureOfContent:
+          type: string
+          enum:
+          - NOT_SET
+          - DOCUMENTS
+          - GOODS
+          - GIFTS
+          - SAMPLES
+          - RETURNED_GOODS
+          - PERSONAL_EFFECTS
+          - OTHER
+        CommercialInvoiceType:
+          type: string
+          enum:
+          - NOT_SET
+          - COMMERCIAL_INVOICE
+          - PROFORMA_INVOICE
+          - EXTERNAL_COMMERCIAL_INVOICE
+          - EXTERNAL_PROFORMA_INVOICE
+        CommercialInvoiceDescription:
+          type: string
+        CurrencyISOCode:
+          type: string
+        DeliveredDutiesPaid:
+          type: string
+          enum:
+          - NOT_SET
+          - COVERAGE_RECIPIENT
+          - COVERAGE_SENDER
+        CustomerReference:
+          type: string
+        NonDeliveryInstruction:
+          type: string
+          enum:
+          - NOT_SET
+          - TREAT_AS_ABANDONED
+          - RETURN_AS_PRIORITY
+        SpecialDeliveryInstruction:
+          type: string
+        SignatureId:
+          type: string
+        DocumentIds:
+          type: array
+          items:
+            type: string
+        UrgentServiceType:
+          type: string
+          enum:
+          - NOT_SET
+          - PRIORITY
+          - EXPRESS
+        WaybillFormat:
+          type: string
+          enum:
+          - NOT_SET
+          - RECIPIENT_COPY
+          - ADDRESS_LABEL
+        PriceType:
+          type: string
+          enum:
+          - NOT_SET
+          - NOT_VISIBLE
+          - LIST
+          - CONTRACT
+        OriginDeclarationLanguage:
+          type: string
+          enum:
+          - NOT_SET
+          - de
+          - fr
+          - it
+          - en
+        Articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.Article"
+        Collection:
+          $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.Collection"
+        Notification:
+          $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.Notification"
+        ThisIsATestEntry:
+          type: boolean
+    ch.post.logistics.waybill.document.models.v3.Address:
+      required:
+      - CountryISOCode
+      type: object
+      properties:
+        AddressType:
+          type: string
+          enum:
+          - SENDER_ADDRESS
+          - RECIPIENT_ADDRESS
+          - INVOICE_ADDRESS
+        Name1:
+          type: string
+        Name2:
+          type: string
+        Name3:
+          type: string
+        Address1:
+          type: string
+        Address2:
+          type: string
+        Address3:
+          type: string
+        Postcode:
+          type: string
+        City:
+          type: string
+        CountryISOCode:
+          type: string
+        StateISOCode:
+          type: string
+        ContactPerson:
+          type: string
+        PhoneNumber:
+          type: string
+        EMailAddress:
+          type: string
+        VatNumber:
+          type: string
+        TaxNumber:
+          type: string
+    ch.post.logistics.waybill.document.models.v3.Article:
+      required:
+      - CommercialInvoiceDescription
+      - CustomsTariffNumber
+      - OriginCountryIsoCode
+      - Quantity
+      - Value
+      - Weight
+      type: object
+      properties:
+        Description:
+          type: string
+        CommercialInvoiceDescription:
+          type: string
+        Quantity:
+          type: integer
+          format: int32
+        Value:
+          type: number
+          format: double
+        OriginCountryIsoCode:
+          type: string
+        Weight:
+          type: number
+          format: double
+        CustomsTariffNumber:
+          type: string
+        Key:
+          type: string
+        GoodsTransitCertificate:
+          type: string
+        GoodsTransitCertificateNumber:
+          type: string
+        ExportLicenceNumber:
+          type: string
+        ExportLicenceDate:
+          type: string
+          format: date-time
+    ch.post.logistics.waybill.document.models.v3.Collection:
+      required:
+      - Address
+      - City
+      - CollectionDate
+      - CollectionTimeWindow
+      - ContactPerson
+      - CountryISOCode
+      - Postcode
+      type: object
+      properties:
+        ContactPerson:
+          type: string
+        Address:
+          type: string
+        Postcode:
+          type: string
+        City:
+          type: string
+        CountryISOCode:
+          type: string
+        StateISOCode:
+          type: string
+        CollectionDate:
+          type: string
+          format: date-time
+        CollectionTimeWindow:
+          $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.CollectionTimeWindow"
+        CollectionInstructions:
+          type: string
+    ch.post.logistics.waybill.document.models.v3.Notification:
+      required:
+      - EMailAddresses
+      - NotificationEvents
+      - NotificationLanguage
+      type: object
+      properties:
+        EMailAddresses:
+          type: array
+          items:
+            type: string
+        NotificationLanguage:
+          type: string
+          enum:
+          - NOT_SET
+          - de
+          - fr
+          - it
+          - en
+        NotificationEvents:
+          $ref: "#/components/schemas/ch.post.logistics.waybill.document.models.v3.NotificationEvents"
+    ch.post.logistics.waybill.document.models.v3.CollectionTimeWindow:
+      required:
+      - From
+      - To
+      type: object
+      properties:
+        From:
+          type: string
+        To:
+          type: string
+    ch.post.logistics.waybill.document.models.v3.NotificationEvents:
+      type: object
+      properties:
+        MailpieceRegisteredAtPartner:
+          type: boolean
+        MailpiecePassedToPartner:
+          type: boolean
+        NewEstimatedDeliveryTime:
+          type: boolean
+        UnexpectedEvent:
+          type: boolean
+        MailpieceDelivered:
+          type: boolean
+  securitySchemes:
+    ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://api.post.ch/OAuth/token
+          scopes:
+            DCAPI_WAYBILL_DOCUMENT: General access to Waybill API
