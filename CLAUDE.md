@@ -47,10 +47,32 @@ New tests fail until you run `make test-update` to generate the snapshot. If a s
 
 Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`), one logical unit per commit, grouped by layer: tooling → dependencies → app code → tests → docs/config.
 
+## Ingesting API Documentation
+
+Use the `ingest-api-doc` skill (`.claude/skills/ingest-api-doc/SKILL.md`) to generate mock endpoints from an API doc:
+
+```
+/ingest specs/my-api/openapi.yaml
+/ingest docs/api.md server_name=my-api version=v2
+```
+
+The skill supports OpenAPI 3.x, Swagger 2.x, and plain text/Markdown. It generates:
+
+| File | Convention |
+|------|------------|
+| `specs/{server-name}/{filename}` | Original doc stored for reference |
+| `app/routers/{server_name}.py` | FastAPI router with `prefix="/v{N}/{server-name}"` |
+| `app/models/{server_name}.py` | Pydantic models from response schemas |
+| `app/stubs/{server_name}.json` | Fake response data keyed by `"{METHOD} {path}"` |
+
+- `server_name` in URLs/dirs is kebab-case; in Python filenames it is snake_case
+- Stubs are loaded via `app.stubs.load_stubs(server_name)` — a cached JSON reader
+- After generating, run `make test-update` to generate snapshots, then `make test`
+
 ## Key Design Decisions
 
 - Routes and models are derived from OpenAPI specs — the spec is the source of truth
 - All responses are placeholder/stub data, not live — the purpose is integration scaffolding
-- When adding a new spec, generate corresponding routers, models, and stub responses
+- When adding a new spec, use `/ingest` or follow the `ingest-api-doc` skill to generate routers, models, and stubs
 - Use `uv` as the package manager (not pip or poetry)
 - The catch-all route must always be registered last in `main.py` (after all `include_router` calls)
